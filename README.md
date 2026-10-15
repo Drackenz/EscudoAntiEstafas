@@ -1,0 +1,27 @@
+# Escudo AntiEstafas
+
+Aplicación web académica para identificar posibles estafas en mensajes y explicar el riesgo con un semáforo claro. El proyecto apoya la protección de personas adultas mayores y se relaciona con el ODS 16.
+
+## Requisitos
+
+- PHP 8.2 o superior con extensiones de Laravel
+- Composer
+- MySQL
+- Node.js y npm para compilar los estilos de Tailwind
+
+Este inicio usa Laravel 12, compatible con el PHP 8.2 instalado en el equipo.
+
+## Preparar el proyecto
+
+1. Instalar las dependencias de PHP con `composer install`.
+2. Copiar `.env.example` como `.env` si todavía no existe.
+3. Completar los datos de MySQL y las variables de Gemini en `.env`.
+4. Generar la clave de la aplicación con `php artisan key:generate`.
+5. Crear la base de datos `escudo_antiestafas` en MySQL.
+6. Iniciar el servidor con `php artisan serve`.
+
+Las variables `GEMINI_API_KEY` y `GEMINI_MODEL` se mantienen en `.env`; no se guardan claves en Git.
+
+## Estado
+
+Paso 0: proyecto Laravel inicializado. Los módulos se agregarán en pasos pequeños.
