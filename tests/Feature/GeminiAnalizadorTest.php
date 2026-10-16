@@ -97,6 +97,33 @@ class GeminiAnalizadorTest extends TestCase
         }
     }
 
+    public function test_inspecciona_urls_aunque_gemini_no_las_marque_y_no_guarda_la_direccion(): void
+    {
+        Http::fake([
+            '*' => Http::response($this->respuestaGemini([
+                'riesgo' => 10,
+                'veredicto' => 'SEGURO',
+                'banderas' => [],
+                'explicacion' => 'No se observaron señales claras en el texto.',
+                'accion' => 'Confirma solicitudes por un canal oficial.',
+                'enlaces_sospechosos' => [],
+                'canal_detectado' => 'desconocido',
+            ])),
+        ]);
+
+        $this->post('/analizar', ['mensaje' => 'Mira esta oferta: https://bit.ly/regalo'])
+            ->assertOk()
+            ->assertViewIs('resultado')
+            ->assertSee('Inspector de enlaces')
+            ->assertSee('https://bit.ly/regalo')
+            ->assertSee('Enlace acortado: puede ocultar el destino final.');
+
+        $this->assertDatabaseHas('banderas_detectadas', ['nombre' => 'enlace acortado']);
+        $bandera = \Illuminate\Support\Facades\DB::table('banderas_detectadas')->first();
+        $registro = \Illuminate\Support\Facades\DB::table('analisis')->first();
+        $this->assertStringNotContainsString('bit.ly/regalo', $bandera->nombre.$registro->hash_mensaje.$registro->explicacion);
+    }
+
     public function test_usa_el_motor_de_reglas_si_gemini_devuelve_json_incompleto(): void
     {
         Http::fake([

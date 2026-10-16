@@ -23,6 +23,8 @@ Este inicio usa Laravel 12, compatible con el PHP 8.2 instalado en el equipo.
 
 Las variables `GEMINI_API_KEY` y `GEMINI_MODEL` se mantienen en `.env`; no se guardan claves en Git. Configura un nombre de modelo habilitado para tu cuenta. Si falta la clave, hay un error de conexión o Gemini devuelve una respuesta incompleta, el sistema usa el motor de reglas; para una imagen sin texto, el resultado de respaldo es cauteloso porque las reglas offline no pueden leer capturas.
 
+El inspector de URLs revisa localmente los enlaces escritos en el texto para detectar acortadores, terminaciones poco habituales y direcciones HTTP. No abre los enlaces ni confirma si un sitio es seguro. Google Safe Browsing queda como una integración opcional futura.
+
 ## Datos guardados
 
 - `analisis` conserva el hash SHA-256, canal, riesgo, veredicto, explicación, acción, método y fecha.
@@ -40,3 +42,4 @@ El texto original y las imágenes no se guardan.
 - Paso 4: integración multimodal con Gemini y respaldo al motor de reglas.
 - Paso 5: semáforo de resultados y guardado del resumen anonimizado.
 - Paso 6: modo fácil de leer y lectura en voz alta del veredicto.
+- Paso 7: inspector local de URLs con señales de acortadores y dominios sospechosos.

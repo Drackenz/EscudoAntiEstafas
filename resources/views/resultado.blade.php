@@ -72,10 +72,35 @@
             <p>{{ $resultado['accion'] }}</p>
         </section>
 
+        @if (count($resultado['detalle_enlaces']) > 0)
+            <section class="tarjeta enlaces" aria-labelledby="titulo-inspector">
+                <p class="ceja">Revisión local de la dirección</p>
+                <h2 id="titulo-inspector">Inspector de enlaces</h2>
+                <p>Revisamos la forma del enlace sin abrirlo. Una alerta es una señal para tener cuidado; no confirma por sí sola que el sitio sea una estafa.</p>
+                <ul>
+                    @foreach ($resultado['detalle_enlaces'] as $detalle)
+                        <li>
+                            <strong>{{ $detalle['url'] }}</strong>
+                            @if ($detalle['sospechoso'])
+                                <ul>
+                                    @foreach ($detalle['mensajes'] as $mensajeEnlace)
+                                        <li>{{ $mensajeEnlace }}</li>
+                                    @endforeach
+                                </ul>
+                            @else
+                                <p class="muted">No vimos estas señales en su estructura. Esto no garantiza que el sitio sea seguro.</p>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+                <p class="muted">No visitamos los sitios ni consultamos Google Safe Browsing.</p>
+            </section>
+        @endif
+
         @if (count($resultado['enlaces_sospechosos']) > 0)
             <section class="tarjeta enlaces" aria-labelledby="titulo-enlaces">
-                <p class="ceja">Mira con cuidado</p>
-                <h2 id="titulo-enlaces">Enlaces que requieren precaución</h2>
+                <p class="ceja">Señalados por el análisis</p>
+                <h2 id="titulo-enlaces">Otros enlaces que requieren precaución</h2>
                 <ul>
                     @foreach ($resultado['enlaces_sospechosos'] as $enlace)
                         <li>{{ $enlace }}</li>

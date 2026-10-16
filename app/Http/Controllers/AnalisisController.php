@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Services\GeminiAnalizador;
+use App\Services\InspectorUrls;
 use App\Services\MotorReglas;
 
 class AnalisisController extends Controller
@@ -16,7 +17,7 @@ class AnalisisController extends Controller
         return view('inicio');
     }
 
-    public function validarEntrada(Request $request, GeminiAnalizador $gemini, MotorReglas $motor)
+    public function validarEntrada(Request $request, GeminiAnalizador $gemini, MotorReglas $motor, InspectorUrls $inspectorUrls)
     {
         $validador = Validator::make($request->all(), [
             'mensaje' => ['nullable', 'string', 'max:10000', 'required_without:imagen'],
@@ -65,6 +66,23 @@ class AnalisisController extends Controller
                 'enlaces_sospechosos' => [],
                 'canal_detectado' => 'desconocido',
             ];
+        }
+
+        $resultado['detalle_enlaces'] = $inspectorUrls->inspeccionar($mensaje);
+        foreach ($resultado['detalle_enlaces'] as $detalle) {
+            foreach ($detalle['senales'] as $senal) {
+                $bandera = 'enlace acortado';
+
+                if ($senal === 'terminacion_inusual') {
+                    $bandera = 'dominio de terminación inusual';
+                } elseif ($senal === 'http') {
+                    $bandera = 'enlace sin conexión cifrada';
+                }
+
+                if (! in_array($bandera, $resultado['banderas'], true)) {
+                    $resultado['banderas'][] = $bandera;
+                }
+            }
         }
 
         $resultado['explicacion'] = $this->ocultarDatosPrivados($resultado['explicacion']);

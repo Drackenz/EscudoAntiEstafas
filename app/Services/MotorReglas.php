@@ -11,13 +11,6 @@ class MotorReglas
         'cambio de número de contacto' => [25, '/\b(n[uú]mero nuevo|cambi[eé] de n[uú]mero|este es mi nuevo n[uú]mero|perd[ií] mi tel[eé]fono)\b/u'],
     ];
 
-    private const ACORTADORES = [
-        'bit.ly', 'tinyurl.com', 't.co', 'cutt.ly', 'rebrand.ly', 'is.gd',
-        'tiny.cc', 'ow.ly', 'rb.gy', 'lnkd.in', 'goo.gl',
-    ];
-
-    private const DOMINIOS_INUSUALES = ['xyz', 'top', 'click', 'work', 'loan', 'gq', 'tk', 'ml', 'cf', 'ga'];
-
     /** Analiza el texto en memoria y devuelve señales sin persistir el mensaje. */
     public function analizarTexto(string $mensaje): array
     {
@@ -32,25 +25,24 @@ class MotorReglas
             }
         }
 
-        $enlaces = $this->enlacesDelTexto($mensaje);
-        foreach ($enlaces as $enlace) {
-            $host = strtolower((string) parse_url($enlace, PHP_URL_HOST));
-            $partes = explode('.', $host);
-            $dominioSuperior = end($partes);
-
-            if (in_array($host, self::ACORTADORES, true) || $this->esSubdominioDeAcortador($host)) {
-                $puntaje += 20;
-                $banderas[] = 'enlace acortado';
+        $detallesEnlaces = (new InspectorUrls)->inspeccionar($mensaje);
+        $enlacesSospechosos = [];
+        foreach ($detallesEnlaces as $detalle) {
+            foreach ($detalle['senales'] as $senal) {
+                if ($senal === 'acortador') {
+                    $puntaje += 20;
+                    $banderas[] = 'enlace acortado';
+                } elseif ($senal === 'terminacion_inusual') {
+                    $puntaje += 20;
+                    $banderas[] = 'dominio de terminación inusual';
+                } elseif ($senal === 'http') {
+                    $puntaje += 15;
+                    $banderas[] = 'enlace sin conexión cifrada';
+                }
             }
 
-            if (in_array($dominioSuperior, self::DOMINIOS_INUSUALES, true)) {
-                $puntaje += 20;
-                $banderas[] = 'dominio de terminación inusual';
-            }
-
-            if (str_starts_with(strtolower($enlace), 'http://')) {
-                $puntaje += 15;
-                $banderas[] = 'enlace sin conexión cifrada';
+            if ($detalle['sospechoso']) {
+                $enlacesSospechosos[] = $detalle['url'];
             }
         }
 
@@ -69,44 +61,9 @@ class MotorReglas
                 ? 'No se detectaron señales de riesgo en el texto analizado.'
                 : 'Se detectaron estas señales: '.implode(', ', array_values(array_unique($banderas))).'.',
             'accion' => $this->accionPara($veredicto),
-            'enlaces_sospechosos' => $this->enlacesSospechosos($enlaces),
+            'enlaces_sospechosos' => $enlacesSospechosos,
             'canal_detectado' => $this->detectarCanal($texto),
         ];
-    }
-
-    private function enlacesDelTexto(string $texto): array
-    {
-        preg_match_all('~\bhttps?://[^\s<>"\']+|\bwww\.[^\s<>"\']+~iu', $texto, $coincidencias);
-
-        return array_values(array_unique(array_map(function (string $enlace): string {
-            $enlace = rtrim($enlace, '.,;:!?)]}');
-
-            return str_starts_with(strtolower($enlace), 'www.') ? 'http://'.$enlace : $enlace;
-        }, $coincidencias[0] ?? [])));
-    }
-
-    private function esSubdominioDeAcortador(string $host): bool
-    {
-        foreach (self::ACORTADORES as $dominio) {
-            if (str_ends_with($host, '.'.$dominio)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function enlacesSospechosos(array $enlaces): array
-    {
-        return array_values(array_filter($enlaces, function (string $enlace): bool {
-            $host = strtolower((string) parse_url($enlace, PHP_URL_HOST));
-            $partes = explode('.', $host);
-
-            return str_starts_with(strtolower($enlace), 'http://')
-                || in_array($host, self::ACORTADORES, true)
-                || $this->esSubdominioDeAcortador($host)
-                || in_array(end($partes), self::DOMINIOS_INUSUALES, true);
-        }));
     }
 
     private function detectarCanal(string $texto): string
