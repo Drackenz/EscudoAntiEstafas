@@ -34,3 +34,5 @@ El texto original y las imágenes no se guardan.
 
 - Paso 0: proyecto Laravel inicializado.
 - Paso 1: tablas de análisis anónimo, banderas y encuesta comunal preparadas.
+- Paso 2: motor de reglas offline con ejemplos de prueba.
+- Paso 3: formulario para texto e imágenes con validación y vista previa local.
