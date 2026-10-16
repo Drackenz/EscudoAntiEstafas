@@ -24,8 +24,11 @@ class AnalisisFormularioTest extends TestCase
     {
         $this->get('/')
             ->assertOk()
-            ->assertSee('Revisa un mensaje sospechoso')
-            ->assertSee('image/webp');
+            ->assertSee('Revisemos ese mensaje con calma.')
+            ->assertSee('image/webp')
+            ->assertSee('Modo fácil de leer')
+            ->assertSee('css/app.css')
+            ->assertSee('js/app.js');
     }
 
     public function test_pide_texto_o_imagen_y_no_rellena_el_texto_anterior(): void

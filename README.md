@@ -39,3 +39,4 @@ El texto original y las imágenes no se guardan.
 - Paso 3: formulario para texto e imágenes con validación y vista previa local.
 - Paso 4: integración multimodal con Gemini y respaldo al motor de reglas.
 - Paso 5: semáforo de resultados y guardado del resumen anonimizado.
+- Paso 6: modo fácil de leer y lectura en voz alta del veredicto.

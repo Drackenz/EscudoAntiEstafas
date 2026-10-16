@@ -41,7 +41,9 @@ class GeminiAnalizadorTest extends TestCase
             ->assertOk()
             ->assertViewIs('resultado')
             ->assertSee('Riesgo: 70 de 100')
-            ->assertSee('ESTAFA');
+            ->assertSee('ESTAFA')
+            ->assertSee('Escuchar el resultado')
+            ->assertSee('Modo fácil de leer');
 
         $registro = \Illuminate\Support\Facades\DB::table('analisis')->first();
         $this->assertSame('gemini', $registro->metodo);
