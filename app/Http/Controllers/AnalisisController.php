@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Analisis;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Services\GeminiAnalizador;
 use App\Services\MotorReglas;
@@ -37,13 +39,18 @@ class AnalisisController extends Controller
         $mensaje = (string) $request->input('mensaje', '');
         $imagen = $request->file('imagen');
         $resultado = $gemini->analizar($mensaje, $imagen);
+        $metodo = 'gemini';
 
-        if ($resultado === null && trim($mensaje) !== '') {
-            $resultado = $motor->analizarTexto($mensaje);
+        if ($resultado === null) {
+            $metodo = 'reglas';
 
-            if ($imagen !== null) {
-                $resultado['banderas'][] = 'captura no analizada por el motor offline';
-                $resultado['explicacion'] .= ' La captura no pudo ser revisada sin conexión con Gemini.';
+            if (trim($mensaje) !== '') {
+                $resultado = $motor->analizarTexto($mensaje);
+
+                if ($imagen !== null) {
+                    $resultado['banderas'][] = 'captura no analizada por el motor offline';
+                    $resultado['explicacion'] .= ' La captura no pudo ser revisada sin conexión con Gemini.';
+                }
             }
         }
 
@@ -60,7 +67,57 @@ class AnalisisController extends Controller
             ];
         }
 
-        // Devolvemos solo el resultado; el texto y el archivo no se guardan.
-        return response()->json($resultado);
+        $resultado['explicacion'] = $this->ocultarDatosPrivados($resultado['explicacion']);
+        $resultado['accion'] = $this->ocultarDatosPrivados($resultado['accion']);
+        $banderasSeguras = [];
+        foreach ($resultado['banderas'] as $bandera) {
+            $banderasSeguras[] = $this->ocultarDatosPrivados($bandera);
+        }
+        $resultado['banderas'] = $banderasSeguras;
+
+        DB::transaction(function () use ($mensaje, $resultado, $metodo): void {
+            $analisis = Analisis::create([
+                // En análisis solo con imagen, el mensaje es vacío y se calcula su hash vacío.
+                'hash_mensaje' => hash('sha256', $mensaje),
+                'canal' => $resultado['canal_detectado'],
+                'riesgo' => $resultado['riesgo'],
+                'veredicto' => $resultado['veredicto'],
+                'explicacion' => $resultado['explicacion'],
+                'accion_recomendada' => $resultado['accion'],
+                'metodo' => $metodo,
+                'fecha_analisis' => now(),
+            ]);
+
+            $nombresGuardados = [];
+            foreach ($resultado['banderas'] as $bandera) {
+                $nombre = mb_substr(trim($bandera), 0, 100, 'UTF-8');
+
+                if ($nombre !== '' && ! in_array($nombre, $nombresGuardados, true)) {
+                    $analisis->banderasDetectadas()->create(['nombre' => $nombre]);
+                    $nombresGuardados[] = $nombre;
+                }
+            }
+        });
+
+        return view('resultado', [
+            'resultado' => $resultado,
+            'metodo' => $metodo,
+        ]);
+    }
+
+    private function ocultarDatosPrivados(string $texto): string
+    {
+        $patrones = [
+            '/\b(?:contrase(?:ña|na)|clave)\s*(?::|=|es)\s*[^\s,.;]{3,}/iu',
+            '/\b(?:pin|token|c[oó]digo(?:\s+de\s+verificaci[oó]n)?)\s*(?::|=|es)?\s*[\p{L}\p{N}!@#$%^&*_.-]{4,}/iu',
+            '/(?<!\d)(?:\d[ -]?){13,19}(?!\d)/u',
+            '/(?<!\d)\+?\d[\d\s().-]{7,}\d(?!\d)/u',
+        ];
+
+        foreach ($patrones as $patron) {
+            $texto = preg_replace($patron, '[dato oculto]', $texto) ?? $texto;
+        }
+
+        return $texto;
     }
 }

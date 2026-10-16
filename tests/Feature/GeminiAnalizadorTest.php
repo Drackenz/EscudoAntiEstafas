@@ -4,12 +4,15 @@ namespace Tests\Feature;
 
 use Illuminate\Http\Client\Request as SolicitudHttp;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class GeminiAnalizadorTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -36,8 +39,13 @@ class GeminiAnalizadorTest extends TestCase
 
         $this->post('/analizar', ['mensaje' => 'Comparte tu clave ahora.'])
             ->assertOk()
-            ->assertJsonPath('riesgo', 70)
-            ->assertJsonPath('veredicto', 'ESTAFA');
+            ->assertViewIs('resultado')
+            ->assertSee('Riesgo: 70 de 100')
+            ->assertSee('ESTAFA');
+
+        $registro = \Illuminate\Support\Facades\DB::table('analisis')->first();
+        $this->assertSame('gemini', $registro->metodo);
+        $this->assertSame(hash('sha256', 'Comparte tu clave ahora.'), $registro->hash_mensaje);
 
         Http::assertSent(function (SolicitudHttp $solicitud): bool {
             return str_contains($solicitud->url(), '/models/modelo-prueba:generateContent');
@@ -56,6 +64,37 @@ class GeminiAnalizadorTest extends TestCase
         });
     }
 
+    public function test_oculta_codigos_y_telefonos_antes_de_guardar_el_resumen(): void
+    {
+        Http::fake([
+            '*' => Http::response($this->respuestaGemini([
+                'riesgo' => 80,
+                'veredicto' => 'SEGURO',
+                'banderas' => ['PIN: 482913'],
+                'explicacion' => 'El PIN es 482913. Llamar al +503 7123 4567.',
+                'accion' => 'No compartas el código: 482913.',
+                'enlaces_sospechosos' => [],
+                'canal_detectado' => 'desconocido',
+            ])),
+        ]);
+
+        $respuesta = $this->post('/analizar', ['mensaje' => 'Mensaje con información privada de prueba.'])
+            ->assertOk()
+            ->assertViewIs('resultado')
+            ->assertDontSee('482913')
+            ->assertDontSee('7123 4567')
+            ->assertSee('[dato oculto]');
+
+        $registro = \Illuminate\Support\Facades\DB::table('analisis')->first();
+        $bandera = \Illuminate\Support\Facades\DB::table('banderas_detectadas')->first();
+
+        foreach ([$registro->explicacion, $registro->accion_recomendada, $bandera->nombre] as $datoGuardado) {
+            $this->assertStringNotContainsString('482913', $datoGuardado);
+            $this->assertStringNotContainsString('7123', $datoGuardado);
+            $this->assertStringContainsString('[dato oculto]', $datoGuardado);
+        }
+    }
+
     public function test_usa_el_motor_de_reglas_si_gemini_devuelve_json_incompleto(): void
     {
         Http::fake([
@@ -67,8 +106,11 @@ class GeminiAnalizadorTest extends TestCase
 
         $this->post('/analizar', ['mensaje' => 'URGENTE: responde ahora mismo.'])
             ->assertOk()
-            ->assertJsonPath('riesgo', 15)
-            ->assertJsonPath('veredicto', 'SEGURO');
+            ->assertViewIs('resultado')
+            ->assertSee('Riesgo: 15 de 100')
+            ->assertSee('SEGURO');
+
+        $this->assertDatabaseHas('analisis', ['metodo' => 'reglas', 'riesgo' => 15]);
     }
 
     public function test_usa_el_motor_de_reglas_si_gemini_responde_con_error(): void
@@ -77,8 +119,11 @@ class GeminiAnalizadorTest extends TestCase
 
         $this->post('/analizar', ['mensaje' => 'Ganaste un premio en el sorteo.'])
             ->assertOk()
-            ->assertJsonPath('riesgo', 20)
-            ->assertJsonPath('banderas.0', 'premio');
+            ->assertViewIs('resultado')
+            ->assertSee('Riesgo: 20 de 100')
+            ->assertSee('premio');
+
+        $this->assertDatabaseHas('analisis', ['metodo' => 'reglas', 'riesgo' => 20]);
     }
 
     public function test_usa_el_motor_de_reglas_si_gemini_no_tiene_conexion(): void
@@ -89,8 +134,11 @@ class GeminiAnalizadorTest extends TestCase
 
         $this->post('/analizar', ['mensaje' => 'Ganaste un premio en el sorteo.'])
             ->assertOk()
-            ->assertJsonPath('riesgo', 20)
-            ->assertJsonPath('veredicto', 'SEGURO');
+            ->assertViewIs('resultado')
+            ->assertSee('Riesgo: 20 de 100')
+            ->assertSee('SEGURO');
+
+        $this->assertDatabaseHas('analisis', ['metodo' => 'reglas', 'riesgo' => 20]);
     }
 
     public function test_envia_la_imagen_en_linea_y_no_persiste_la_captura(): void
@@ -111,7 +159,10 @@ class GeminiAnalizadorTest extends TestCase
 
         $this->post('/analizar', ['imagen' => $imagen])
             ->assertOk()
-            ->assertJsonPath('riesgo', 35);
+            ->assertViewIs('resultado')
+            ->assertSee('Riesgo: 35 de 100');
+
+        $this->assertDatabaseHas('analisis', ['metodo' => 'gemini', 'riesgo' => 35]);
 
         Http::assertSent(function (SolicitudHttp $solicitud): bool {
             $parteImagen = data_get($solicitud->data(), 'contents.0.parts.1.inlineData');
