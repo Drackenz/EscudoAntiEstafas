@@ -22,6 +22,15 @@ Este inicio usa Laravel 12, compatible con el PHP 8.2 instalado en el equipo.
 
 Las variables `GEMINI_API_KEY` y `GEMINI_MODEL` se mantienen en `.env`; no se guardan claves en Git.
 
+## Datos guardados
+
+- `analisis` conserva el hash SHA-256, canal, riesgo, veredicto, explicación, acción, método y fecha.
+- `banderas_detectadas` conserva nombres de señales, sin fragmentos del mensaje original.
+- `encuesta_comunidad` guarda conteos agregados por pregunta, respuesta y fecha, sin identificar participantes.
+
+El texto original y las imágenes no se guardan.
+
 ## Estado
 
-Paso 0: proyecto Laravel inicializado. Los módulos se agregarán en pasos pequeños.
+- Paso 0: proyecto Laravel inicializado.
+- Paso 1: tablas de análisis anónimo, banderas y encuesta comunal preparadas.
