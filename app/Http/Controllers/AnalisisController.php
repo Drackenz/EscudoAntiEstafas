@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Services\GeminiAnalizador;
+use App\Services\MotorReglas;
 
 class AnalisisController extends Controller
 {
@@ -12,7 +14,7 @@ class AnalisisController extends Controller
         return view('inicio');
     }
 
-    public function validarEntrada(Request $request)
+    public function validarEntrada(Request $request, GeminiAnalizador $gemini, MotorReglas $motor)
     {
         $validador = Validator::make($request->all(), [
             'mensaje' => ['nullable', 'string', 'max:10000', 'required_without:imagen'],
@@ -32,9 +34,33 @@ class AnalisisController extends Controller
             ], 422);
         }
 
-        // En este paso solo comprobamos la entrada; no almacenamos texto ni imagen.
-        return view('inicio', [
-            'mensajeEstado' => 'La entrada es válida. El análisis se habilitará en el siguiente paso.',
-        ]);
+        $mensaje = (string) $request->input('mensaje', '');
+        $imagen = $request->file('imagen');
+        $resultado = $gemini->analizar($mensaje, $imagen);
+
+        if ($resultado === null && trim($mensaje) !== '') {
+            $resultado = $motor->analizarTexto($mensaje);
+
+            if ($imagen !== null) {
+                $resultado['banderas'][] = 'captura no analizada por el motor offline';
+                $resultado['explicacion'] .= ' La captura no pudo ser revisada sin conexión con Gemini.';
+            }
+        }
+
+        if ($resultado === null) {
+            // El motor offline no puede leer una imagen, así que no la marca como segura.
+            $resultado = [
+                'riesgo' => 50,
+                'veredicto' => 'SOSPECHOSO',
+                'banderas' => ['imagen no analizada por el motor offline'],
+                'explicacion' => 'No fue posible revisar la captura. No abras enlaces ni compartas datos hasta verificarla.',
+                'accion' => 'Confirma el mensaje con la institución por un canal oficial antes de responder.',
+                'enlaces_sospechosos' => [],
+                'canal_detectado' => 'desconocido',
+            ];
+        }
+
+        // Devolvemos solo el resultado; el texto y el archivo no se guardan.
+        return response()->json($resultado);
     }
 }

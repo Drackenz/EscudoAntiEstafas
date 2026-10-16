@@ -20,7 +20,7 @@ Este inicio usa Laravel 12, compatible con el PHP 8.2 instalado en el equipo.
 5. Crear la base de datos `escudo_antiestafas` en MySQL.
 6. Iniciar el servidor con `php artisan serve`.
 
-Las variables `GEMINI_API_KEY` y `GEMINI_MODEL` se mantienen en `.env`; no se guardan claves en Git.
+Las variables `GEMINI_API_KEY` y `GEMINI_MODEL` se mantienen en `.env`; no se guardan claves en Git. Configura un nombre de modelo habilitado para tu cuenta. Si falta la clave, hay un error de conexión o Gemini devuelve una respuesta incompleta, el sistema usa el motor de reglas; para una imagen sin texto, el resultado de respaldo es cauteloso porque las reglas offline no pueden leer capturas.
 
 ## Datos guardados
 
@@ -36,3 +36,4 @@ El texto original y las imágenes no se guardan.
 - Paso 1: tablas de análisis anónimo, banderas y encuesta comunal preparadas.
 - Paso 2: motor de reglas offline con ejemplos de prueba.
 - Paso 3: formulario para texto e imágenes con validación y vista previa local.
+- Paso 4: integración multimodal con Gemini y respaldo al motor de reglas.

@@ -36,7 +36,7 @@
     <main>
         <section class="intro">
             <h1>Revisa un mensaje sospechoso</h1>
-            <p>Pega el texto o selecciona una captura de WhatsApp, SMS o correo. En este paso verificamos el formulario; el análisis se agregará después.</p>
+            <p>Pega el texto o selecciona una captura de WhatsApp, SMS o correo. El contenido se enviará a Gemini para analizarlo; esta aplicación no guarda el texto ni la imagen.</p>
         </section>
 
         @if (isset($mensajeEstado))

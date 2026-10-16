@@ -7,6 +7,16 @@ use Tests\TestCase;
 
 class AnalisisFormularioTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config([
+            'services.gemini.api_key' => '',
+            'services.gemini.model' => '',
+        ]);
+    }
+
     public function test_muestra_el_formulario_de_entrada(): void
     {
         $this->get('/')
@@ -21,7 +31,10 @@ class AnalisisFormularioTest extends TestCase
 
         $this->post('/analizar', ['mensaje' => $textoPrivadoDePrueba])
             ->assertOk()
-            ->assertSee('La entrada es válida')
+            ->assertJsonStructure([
+                'riesgo', 'veredicto', 'banderas', 'explicacion', 'accion',
+                'enlaces_sospechosos', 'canal_detectado',
+            ])
             ->assertDontSee($textoPrivadoDePrueba);
 
         $this->post('/analizar', [])
@@ -35,8 +48,8 @@ class AnalisisFormularioTest extends TestCase
 
         $this->post('/analizar', ['imagen' => $imagen])
             ->assertOk()
-            ->assertSee('La entrada es válida')
-            ->assertDontSee('captura.png');
+            ->assertJsonPath('riesgo', 50)
+            ->assertJsonPath('veredicto', 'SOSPECHOSO');
     }
 
     public function test_rechaza_archivos_que_no_son_imagenes_permitidas(): void
