@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class GeminiAnalizador
 {
@@ -13,7 +14,14 @@ class GeminiAnalizador
         $clave = trim((string) config('services.gemini.api_key'));
         $modelo = trim((string) config('services.gemini.model'));
 
-        if ($clave === '' || ! preg_match('/^[A-Za-z0-9._-]+$/', $modelo)) {
+        $modeloValido = preg_match('/^[A-Za-z0-9._-]+$/', $modelo) === 1;
+
+        if ($clave === '' || ! $modeloValido) {
+            Log::warning('Gemini no se ejecutó por configuración incompleta.', [
+                'api_key_configured' => $clave !== '',
+                'model_configured' => $modeloValido,
+            ]);
+
             return null;
         }
 
@@ -49,34 +57,58 @@ class GeminiAnalizador
                 'parts' => $partes,
             ]],
             'generationConfig' => [
-                'responseFormat' => [
-                    'text' => [
-                        'mimeType' => 'application/json',
-                        'schema' => $this->esquema(),
-                    ],
-                ],
+                'responseMimeType' => 'application/json',
+                'responseSchema' => $this->esquema(),
                 'temperature' => 0.2,
                 'maxOutputTokens' => 1000,
+                'thinkingConfig' => [
+                    'thinkingLevel' => 'low',
+                ],
             ],
         ];
 
-        $url = 'https://generativelanguage.googleapis.com/v1beta/models/'
-            .$modelo.':generateContent';
+        $modeloUsado = $modelo;
+        $respuesta = $this->solicitar($modeloUsado, $clave, $cuerpo);
 
-        try {
-            $respuesta = Http::withHeaders([
-                'x-goog-api-key' => $clave,
-            ])->connectTimeout(5)->timeout(20)->post($url, $cuerpo);
-        } catch (ConnectionException $error) {
+        // Gemini puede devolver 503 por alta demanda. Probamos un Flash alternativo.
+        if (($respuesta === null || $this->servicioNoDisponible($respuesta))
+            && $modeloUsado !== 'gemini-3.6-flash') {
+            Log::notice('Gemini primario no disponible; se intentará el modelo de respaldo.', [
+                'primary_model' => $modeloUsado,
+                'image_attached' => $imagen !== null,
+            ]);
+            $modeloUsado = 'gemini-3.6-flash';
+            $respuesta = $this->solicitar($modeloUsado, $clave, $cuerpo);
+        }
+
+        if ($respuesta === null) {
+            Log::warning('No se pudo completar la solicitud a Gemini.', [
+                'model' => $modeloUsado,
+                'image_attached' => $imagen !== null,
+            ]);
+
             return null;
         }
 
         if (! $respuesta->successful()) {
+            Log::warning('Gemini rechazó la solicitud.', [
+                'http_status' => $respuesta->status(),
+                'api_error_code' => data_get($respuesta->json(), 'error.code'),
+                'api_error_status' => data_get($respuesta->json(), 'error.status'),
+                'model' => $modeloUsado,
+                'image_attached' => $imagen !== null,
+            ]);
+
             return null;
         }
 
         $partesRespuesta = data_get($respuesta->json(), 'candidates.0.content.parts', []);
         if (! is_array($partesRespuesta)) {
+            Log::warning('Gemini respondió sin partes de contenido.', [
+                'model' => $modeloUsado,
+                'image_attached' => $imagen !== null,
+            ]);
+
             return null;
         }
 
@@ -91,12 +123,24 @@ class GeminiAnalizador
         $datos = json_decode($textoJson);
 
         if (! $datos instanceof \stdClass) {
+            Log::warning('Gemini respondió con contenido que no es JSON válido.', [
+                'json_error' => json_last_error_msg(),
+                'model' => $modeloUsado,
+                'image_attached' => $imagen !== null,
+            ]);
+
             return null;
         }
 
         $datos = (array) $datos;
 
         if (! $this->respuestaCompleta($datos)) {
+            Log::warning('La respuesta JSON de Gemini no coincide con el formato esperado.', [
+                'response_keys' => array_keys($datos),
+                'model' => $modeloUsado,
+                'image_attached' => $imagen !== null,
+            ]);
+
             return null;
         }
 
@@ -106,6 +150,31 @@ class GeminiAnalizador
         $datos['enlaces_sospechosos'] = array_slice($datos['enlaces_sospechosos'], 0, 20);
 
         return $datos;
+    }
+
+    private function solicitar(string $modelo, string $clave, array $cuerpo): ?\Illuminate\Http\Client\Response
+    {
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/'
+            .$modelo.':generateContent';
+
+        try {
+            return Http::withHeaders([
+                'x-goog-api-key' => $clave,
+            ])->connectTimeout(8)->timeout(45)->post($url, $cuerpo);
+        } catch (ConnectionException $error) {
+            Log::warning('Falló la conexión a un modelo Gemini.', [
+                'exception' => class_basename($error),
+                'model' => $modelo,
+            ]);
+
+            return null;
+        }
+    }
+
+    private function servicioNoDisponible(\Illuminate\Http\Client\Response $respuesta): bool
+    {
+        return $respuesta->status() === 503
+            || data_get($respuesta->json(), 'error.status') === 'UNAVAILABLE';
     }
 
     private function respuestaCompleta(array $datos): bool
@@ -170,16 +239,16 @@ class GeminiAnalizador
     private function esquema(): array
     {
         return [
-            'type' => 'object',
+            'type' => 'OBJECT',
             'properties' => [
-                'riesgo' => ['type' => 'integer', 'minimum' => 0, 'maximum' => 100],
-                'veredicto' => ['type' => 'string', 'enum' => ['SEGURO', 'SOSPECHOSO', 'ESTAFA']],
-                'banderas' => ['type' => 'array', 'items' => ['type' => 'string']],
-                'explicacion' => ['type' => 'string'],
-                'accion' => ['type' => 'string'],
-                'enlaces_sospechosos' => ['type' => 'array', 'items' => ['type' => 'string']],
+                'riesgo' => ['type' => 'INTEGER', 'minimum' => 0, 'maximum' => 100],
+                'veredicto' => ['type' => 'STRING', 'enum' => ['SEGURO', 'SOSPECHOSO', 'ESTAFA']],
+                'banderas' => ['type' => 'ARRAY', 'items' => ['type' => 'STRING']],
+                'explicacion' => ['type' => 'STRING'],
+                'accion' => ['type' => 'STRING'],
+                'enlaces_sospechosos' => ['type' => 'ARRAY', 'items' => ['type' => 'STRING']],
                 'canal_detectado' => [
-                    'type' => 'string',
+                    'type' => 'STRING',
                     'enum' => ['whatsapp', 'sms', 'correo', 'desconocido'],
                 ],
             ],

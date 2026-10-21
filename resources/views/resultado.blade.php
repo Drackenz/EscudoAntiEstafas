@@ -44,6 +44,44 @@
             </div>
         </section>
 
+        <section class="comparador" aria-labelledby="titulo-comparador">
+            <p class="ceja">Dos formas de revisar el mensaje</p>
+            <h2 id="titulo-comparador">Comparación: IA y reglas</h2>
+            <p class="muted">Cada método puede detectar señales distintas. Compara sus resultados antes de decidir qué hacer.</p>
+            <div class="rejilla-detalle">
+                <article class="tarjeta comparador-tarjeta">
+                    <h3>Inteligencia artificial · Gemini</h3>
+                    @if ($comparacion['gemini'] !== null)
+                        <p class="comparador-nivel">{{ $comparacion['gemini']['veredicto'] }}</p>
+                        <dl>
+                            <dt>Riesgo</dt>
+                            <dd>{{ $comparacion['gemini']['riesgo'] }} de 100</dd>
+                            <dt>Señales</dt>
+                            <dd>{{ count($comparacion['gemini']['banderas']) > 0 ? implode(', ', $comparacion['gemini']['banderas']) : 'No detectó señales específicas' }}</dd>
+                        </dl>
+                        <p>{{ $comparacion['gemini']['explicacion'] }}</p>
+                        <p><strong>Recomendación:</strong> {{ $comparacion['gemini']['accion'] }}</p>
+                    @else
+                        <p class="comparador-nivel">Sin resultado de Gemini</p>
+                        <p>La IA no estuvo disponible en este análisis. Puede faltar configuración o haber un problema de conexión o cuota.</p>
+                    @endif
+                </article>
+
+                <article class="tarjeta comparador-tarjeta reglas">
+                    <h3>Motor de reglas</h3>
+                    <p class="comparador-nivel">{{ $comparacion['reglas']['veredicto'] }}</p>
+                    <dl>
+                        <dt>Riesgo</dt>
+                        <dd>{{ $comparacion['reglas']['riesgo'] }} de 100</dd>
+                        <dt>Señales</dt>
+                        <dd>{{ count($comparacion['reglas']['banderas']) > 0 ? implode(', ', $comparacion['reglas']['banderas']) : 'No detectó señales específicas' }}</dd>
+                    </dl>
+                    <p>{{ $comparacion['reglas']['explicacion'] }}</p>
+                    <p><strong>Recomendación:</strong> {{ $comparacion['reglas']['accion'] }}</p>
+                </article>
+            </div>
+        </section>
+
         <div class="rejilla-detalle">
             <section class="tarjeta" aria-labelledby="titulo-banderas">
                 <p class="ceja">Las pistas</p>

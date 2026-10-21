@@ -6,9 +6,14 @@ class MotorReglas
 {
     private const REGLAS = [
         'urgencia' => [15, '/\b(urgente|inmediatamente|ahora mismo|ultim[oa] aviso|ultimas? horas|hoy mismo|en\s+\d+\s+minutos)\b/u'],
+        'posible estafa del familiar con teléfono dañado' => [35, '/\b(?:pap[aá]|mam[aá]|hijo|hija|hermano|hermana)\b[\s\S]{0,220}\b(?:tel[eé]fono|celular|sim|tarjeta sim)\b[\s\S]{0,180}\b(?:agua|moj[oó]|da[nñ]ad[oa]|rot[oa]|nuevo n[uú]mero)\b|\b(?:tel[eé]fono|celular|sim|tarjeta sim)\b[\s\S]{0,180}\b(?:agua|moj[oó]|da[nñ]ad[oa]|rot[oa])\b[\s\S]{0,220}\b(?:pap[aá]|mam[aá]|hijo|hija|hermano|hermana)\b/u'],
+        'solicitud de contacto por WhatsApp' => [15, '/\b(?:whats\s*app|whatsapp|wa\.me)\b/u'],
+        'posible suplantación de autoridad de tránsito' => [25, '/\b(?:dgt|direcci[oó]n general de tr[aá]fico)\b[\s\S]{0,160}\b(?:multa|infracci[oó]n|recargo|pago)\b|\b(?:multa|infracci[oó]n|recargo|pago)\b[\s\S]{0,160}\b(?:dgt|direcci[oó]n general de tr[aá]fico)\b/u'],
+        'cobro de multa o infracción pendiente' => [30, '/\b(?:multa|infracci[oó]n|sanci[oó]n)\b(?=[\s\S]{0,100}\b(?:pendiente|impagad[ao]|pagar|pago|recargo|vencid[ao])\b)|\b(?:pendiente|impagad[ao]|pagar|pago|recargo|vencid[ao])\b(?=[\s\S]{0,100}\b(?:multa|infracci[oó]n|sanci[oó]n)\b)/u'],
+        'presión por recargo o plazo de pago' => [20, '/\b(?:recargo|evitar (?:el )?recargo|paga(?:r)? hoy|plazo final|último plazo|vencimiento hoy)\b/u'],
         'premio' => [20, '/\b(premio|ganaste|ganador[oa]?|sorteo|regalo|bono gratis)\b/u'],
         'solicitud de credenciales o códigos' => [35, '/\b(contrase[nñ]a|clave|pin|c[oó]digo de verificaci[oó]n|token|datos bancarios|n[uú]mero de tarjeta)\b/u'],
-        'cambio de número de contacto' => [25, '/\b(n[uú]mero nuevo|cambi[eé] de n[uú]mero|este es mi nuevo n[uú]mero|perd[ií] mi tel[eé]fono)\b/u'],
+        'cambio de número de contacto' => [25, '/\b(?:n[uú]mero nuevo|nuevo n[uú]mero|cambi[eé] de n[uú]mero|este es mi nuevo n[uú]mero|perd[ií] mi tel[eé]fono)\b/u'],
     ];
 
     /** Analiza el texto en memoria y devuelve señales sin persistir el mensaje. */

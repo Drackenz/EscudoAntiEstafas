@@ -17,7 +17,12 @@ class AnalisisController extends Controller
         return view('inicio');
     }
 
-    public function validarEntrada(Request $request, GeminiAnalizador $gemini, MotorReglas $motor, InspectorUrls $inspectorUrls)
+    public function validarEntrada(
+        Request $request,
+        GeminiAnalizador $gemini,
+        MotorReglas $motor,
+        InspectorUrls $inspectorUrls
+    )
     {
         $validador = Validator::make($request->all(), [
             'mensaje' => ['nullable', 'string', 'max:10000', 'required_without:imagen'],
@@ -39,25 +44,21 @@ class AnalisisController extends Controller
 
         $mensaje = (string) $request->input('mensaje', '');
         $imagen = $request->file('imagen');
-        $resultado = $gemini->analizar($mensaje, $imagen);
-        $metodo = 'gemini';
+        $resultadoGemini = $gemini->analizar($mensaje, $imagen);
+        $resultadoReglas = null;
 
-        if ($resultado === null) {
-            $metodo = 'reglas';
+        if (trim($mensaje) !== '') {
+            $resultadoReglas = $motor->analizarTexto($mensaje);
 
-            if (trim($mensaje) !== '') {
-                $resultado = $motor->analizarTexto($mensaje);
-
-                if ($imagen !== null) {
-                    $resultado['banderas'][] = 'captura no analizada por el motor offline';
-                    $resultado['explicacion'] .= ' La captura no pudo ser revisada sin conexión con Gemini.';
-                }
+            if ($imagen !== null) {
+                $resultadoReglas['banderas'][] = 'captura no analizada por el motor offline';
+                $resultadoReglas['explicacion'] .= ' La captura no pudo ser revisada sin conexión con Gemini.';
             }
         }
 
-        if ($resultado === null) {
+        if ($resultadoReglas === null) {
             // El motor offline no puede leer una imagen, así que no la marca como segura.
-            $resultado = [
+            $resultadoReglas = [
                 'riesgo' => 50,
                 'veredicto' => 'SOSPECHOSO',
                 'banderas' => ['imagen no analizada por el motor offline'],
@@ -67,6 +68,14 @@ class AnalisisController extends Controller
                 'canal_detectado' => 'desconocido',
             ];
         }
+
+        if ($resultadoGemini !== null) {
+            $resultadoGemini = $this->ocultarDatosResultado($resultadoGemini);
+        }
+        $resultadoReglas = $this->ocultarDatosResultado($resultadoReglas);
+
+        $resultado = $resultadoGemini ?? $resultadoReglas;
+        $metodo = $resultadoGemini !== null ? 'gemini' : 'reglas';
 
         $resultado['detalle_enlaces'] = $inspectorUrls->inspeccionar($mensaje);
         foreach ($resultado['detalle_enlaces'] as $detalle) {
@@ -84,14 +93,6 @@ class AnalisisController extends Controller
                 }
             }
         }
-
-        $resultado['explicacion'] = $this->ocultarDatosPrivados($resultado['explicacion']);
-        $resultado['accion'] = $this->ocultarDatosPrivados($resultado['accion']);
-        $banderasSeguras = [];
-        foreach ($resultado['banderas'] as $bandera) {
-            $banderasSeguras[] = $this->ocultarDatosPrivados($bandera);
-        }
-        $resultado['banderas'] = $banderasSeguras;
 
         DB::transaction(function () use ($mensaje, $resultado, $metodo): void {
             $analisis = Analisis::create([
@@ -120,7 +121,25 @@ class AnalisisController extends Controller
         return view('resultado', [
             'resultado' => $resultado,
             'metodo' => $metodo,
+            'comparacion' => [
+                'gemini' => $resultadoGemini,
+                'reglas' => $resultadoReglas,
+            ],
         ]);
+    }
+
+    private function ocultarDatosResultado(array $resultado): array
+    {
+        $resultado['explicacion'] = $this->ocultarDatosPrivados($resultado['explicacion']);
+        $resultado['accion'] = $this->ocultarDatosPrivados($resultado['accion']);
+
+        $banderasSeguras = [];
+        foreach ($resultado['banderas'] as $bandera) {
+            $banderasSeguras[] = $this->ocultarDatosPrivados($bandera);
+        }
+        $resultado['banderas'] = $banderasSeguras;
+
+        return $resultado;
     }
 
     private function ocultarDatosPrivados(string $texto): string
