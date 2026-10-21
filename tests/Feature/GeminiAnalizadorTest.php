@@ -43,7 +43,10 @@ class GeminiAnalizadorTest extends TestCase
             ->assertSee('Riesgo: 70 de 100')
             ->assertSee('ESTAFA')
             ->assertSee('Escuchar el resultado')
-            ->assertSee('Modo fácil de leer');
+            ->assertSee('Modo fácil de leer')
+            ->assertSee('Comparación: IA y reglas')
+            ->assertSee('Inteligencia artificial · Gemini')
+            ->assertSee('35 de 100');
 
         $registro = \Illuminate\Support\Facades\DB::table('analisis')->first();
         $this->assertSame('gemini', $registro->metodo);
@@ -137,7 +140,9 @@ class GeminiAnalizadorTest extends TestCase
             ->assertOk()
             ->assertViewIs('resultado')
             ->assertSee('Riesgo: 15 de 100')
-            ->assertSee('SEGURO');
+            ->assertSee('SEGURO')
+            ->assertSee('Sin resultado de Gemini')
+            ->assertSee('Motor de reglas');
 
         $this->assertDatabaseHas('analisis', ['metodo' => 'reglas', 'riesgo' => 15]);
     }

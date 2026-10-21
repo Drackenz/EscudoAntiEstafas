@@ -80,6 +80,15 @@ input[type=file] { min-height: 58px; padding: 13px; }
 .semaforo.estafa .rojo { background: #ff7665; box-shadow: 0 0 0 4px #ffffff55; }
 .rejilla-detalle { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
 .rejilla-detalle .tarjeta { min-height: 170px; }
+.comparador-tarjeta { border-top: 5px solid var(--verde); }
+.comparador { margin-top: 30px; }
+.comparador-tarjeta.reglas { border-top-color: var(--coral); }
+.comparador-tarjeta h3 { margin: 0 0 10px; font-size: 1.15rem; }
+.comparador-nivel { margin: 0 0 14px; color: var(--tinta); font-size: 1.35rem; font-weight: 800; }
+.comparador-tarjeta dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; margin: 0; }
+.comparador-tarjeta dt { color: var(--suave); font-weight: 700; }
+.comparador-tarjeta dd { margin: 0; }
+.comparador-tarjeta p { margin-bottom: 0; }
 .banderas { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .banderas li { padding: 9px 13px; border: 1px solid #e4c886; border-radius: 999px; background: #f8edcf; color: #624711; font-weight: 700; }
 .accion { border-top: 5px solid var(--mostaza); }

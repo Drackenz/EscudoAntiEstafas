@@ -43,3 +43,4 @@ El texto original y las imágenes no se guardan.
 - Paso 5: semáforo de resultados y guardado del resumen anonimizado.
 - Paso 6: modo fácil de leer y lectura en voz alta del veredicto.
 - Paso 7: inspector local de URLs con señales de acortadores y dominios sospechosos.
+- Paso 8: comparación lado a lado de Gemini y el motor de reglas.
