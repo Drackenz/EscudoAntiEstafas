@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AnalisisController;
+use App\Http\Controllers\JuegoController;
 
 Route::get('/', [AnalisisController::class, 'inicio'])->name('inicio');
 Route::post('/analizar', [AnalisisController::class, 'validarEntrada'])->name('analisis.validar');
+Route::get('/juego', [JuegoController::class, 'inicio'])->name('juego.inicio');

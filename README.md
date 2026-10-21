@@ -44,3 +44,4 @@ El texto original y las imágenes no se guardan.
 - Paso 6: modo fácil de leer y lectura en voz alta del veredicto.
 - Paso 7: inspector local de URLs con señales de acortadores y dominios sospechosos.
 - Paso 8: comparación lado a lado de Gemini y el motor de reglas.
+- Paso 9: juego educativo “¿Real o estafa?” con diez casos ficticios, puntaje temporal y explicaciones.

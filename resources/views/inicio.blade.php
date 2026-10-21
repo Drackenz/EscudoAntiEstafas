@@ -11,7 +11,10 @@
     <header class="barra">
         <div class="barra-interior">
             <a class="marca" href="{{ route('inicio') }}"><span class="marca-icono">✳</span>Escudo AntiEstafas</a>
-            <button class="boton-modo" id="alternar-modo" type="button" aria-pressed="false">Aa  Modo fácil de leer</button>
+            <nav class="navegacion" aria-label="Principal">
+                <a class="enlace-juego" href="{{ route('juego.inicio') }}">Jugar: ¿Real o estafa?</a>
+                <button class="boton-modo" id="alternar-modo" type="button" aria-pressed="false">Aa  Modo fácil de leer</button>
+            </nav>
         </div>
     </header>
 
