@@ -6,7 +6,7 @@ class InspectorUrls
 {
     private const ACORTADORES = [
         'bit.ly', 'tinyurl.com', 't.co', 'cutt.ly', 'rebrand.ly', 'is.gd',
-        'tiny.cc', 'ow.ly', 'rb.gy', 'lnkd.in', 'goo.gl',
+        'tiny.cc', 'ow.ly', 'rb.gy', 'lnkd.in', 'goo.gl', 'qrco.de',
     ];
 
     private const TERMINACIONES_INUSUALES = ['xyz', 'top', 'click', 'work', 'loan', 'gq', 'tk', 'ml', 'cf', 'ga'];
@@ -14,14 +14,19 @@ class InspectorUrls
     /** Revisa la estructura de las direcciones sin abrirlas ni consultar servicios externos. */
     public function inspeccionar(string $texto): array
     {
-        preg_match_all('~\bhttps?://[^\s<>"\']+|\bwww\.[^\s<>"\']+~iu', $texto, $coincidencias);
+        preg_match_all('~\bhttps?://[^\s<>"\']+|\bwww\.[^\s<>"\']+|\bwa\.me/\s*\d+~iu', $texto, $coincidencias);
         $enlaces = [];
 
         foreach (array_unique($coincidencias[0] ?? []) as $enlace) {
             $enlace = rtrim($enlace, '.,;:!?)]}');
 
+            // WhatsApp suele escribirse sin protocolo y puede quedar partido al pegarlo.
+            $enlace = preg_replace('~(wa\.me/)\s+~iu', '$1', $enlace) ?? $enlace;
+
             if (str_starts_with(strtolower($enlace), 'www.')) {
                 $enlace = 'http://'.$enlace;
+            } elseif (str_starts_with(strtolower($enlace), 'wa.me/')) {
+                $enlace = 'https://'.$enlace;
             }
 
             $host = strtolower((string) parse_url($enlace, PHP_URL_HOST));
