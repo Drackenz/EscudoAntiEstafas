@@ -121,6 +121,14 @@ input[type=file] { min-height: 58px; padding: 13px; }
 .acciones-juego { display: flex; justify-content: flex-end; margin-top: 20px; }
 .final-juego { margin-top: 30px; padding-top: 26px; border-top: 1px solid var(--borde); }
 .final-juego h2 { font-size: clamp(1.7rem, 4vw, 2.4rem); }
+.tarjeta-comunidad { border-top: 5px solid var(--verde); }
+.aviso-demo { border-color: #e4c886; background: #fff5dc; color: #624711; }
+.rejilla-graficas { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 24px; }
+.figura-grafica { min-width: 0; margin: 0; padding: 18px; border: 1px solid var(--borde); border-radius: 16px; background: #fffefa; }
+.figura-grafica figcaption { margin-bottom: 14px; color: var(--tinta); font-weight: 800; }
+.lienzo-grafica { position: relative; height: 320px; }
+.estado-vacio { max-width: 800px; }
+.estado-vacio code { display: inline-block; margin-top: 8px; padding: 10px 13px; border-radius: 8px; background: #e9e1d1; color: var(--tinta); overflow-wrap: anywhere; }
 footer { margin-top: 34px; color: var(--suave); }
 
 html.modo-facil { font-size: 21px; --crema: #fff; --papel: #fff; --tinta: #102e2c; }
@@ -144,6 +152,9 @@ html.modo-facil .boton, html.modo-facil .boton-secundario, html.modo-facil .boto
     .resultado-cabecera { align-items: flex-start; flex-direction: column; }
     .opciones-juego { grid-template-columns: 1fr; }
     .juego-meta { align-items: flex-start; }
+    .rejilla-graficas { grid-template-columns: 1fr; }
+    .figura-grafica { padding: 14px; }
+    .lienzo-grafica { height: 280px; }
     .resumen { grid-template-columns: 1fr; }
     .semaforo { grid-row: 1; justify-self: start; }
 }

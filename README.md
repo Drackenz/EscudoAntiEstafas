@@ -45,3 +45,6 @@ El texto original y las imágenes no se guardan.
 - Paso 7: inspector local de URLs con señales de acortadores y dominios sospechosos.
 - Paso 8: comparación lado a lado de Gemini y el motor de reglas.
 - Paso 9: juego educativo “¿Real o estafa?” con diez casos ficticios, puntaje temporal y explicaciones.
+- Paso 10: módulo comunal con gráficas de conteos agregados y datos demostrativos opcionales.
+
+Para cargar datos demostrativos en `encuesta_comunidad`, ejecuta `php artisan db:seed --class=EncuestaComunidadSeeder`. Están marcados como `[DEMO]` y se reemplazan al volver a ejecutar el seeder. Cuando existan respuestas reales, el módulo las muestra por separado y deja de usar los datos de demostración.

@@ -13,6 +13,7 @@
             <a class="marca" href="{{ route('inicio') }}"><span class="marca-icono">✳</span>Escudo AntiEstafas</a>
             <nav class="navegacion" aria-label="Principal">
                 <a class="enlace-juego" href="{{ route('juego.inicio') }}">Jugar: ¿Real o estafa?</a>
+                <a class="enlace-juego" href="{{ route('comunidad.inicio') }}">Datos de la comunidad</a>
                 <button class="boton-modo" id="alternar-modo" type="button" aria-pressed="false">Aa  Modo fácil de leer</button>
             </nav>
         </div>
