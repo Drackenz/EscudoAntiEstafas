@@ -75,9 +75,9 @@ class GeminiAnalizadorTest extends TestCase
             '*' => Http::response($this->respuestaGemini([
                 'riesgo' => 80,
                 'veredicto' => 'SEGURO',
-                'banderas' => ['PIN: 482913'],
-                'explicacion' => 'El PIN es 482913. Llamar al +503 7123 4567.',
-                'accion' => 'No compartas el código: 482913.',
+                'banderas' => ['PIN: 000000'],
+                'explicacion' => 'El PIN es 000000. Llamar al +503 0000 0000.',
+                'accion' => 'No compartas el código: 000000.',
                 'enlaces_sospechosos' => [],
                 'canal_detectado' => 'desconocido',
             ])),
@@ -86,16 +86,16 @@ class GeminiAnalizadorTest extends TestCase
         $respuesta = $this->post('/analizar', ['mensaje' => 'Mensaje con información privada de prueba.'])
             ->assertOk()
             ->assertViewIs('resultado')
-            ->assertDontSee('482913')
-            ->assertDontSee('7123 4567')
+            ->assertDontSee('000000')
+            ->assertDontSee('0000 0000')
             ->assertSee('[dato oculto]');
 
         $registro = \Illuminate\Support\Facades\DB::table('analisis')->first();
         $bandera = \Illuminate\Support\Facades\DB::table('banderas_detectadas')->first();
 
         foreach ([$registro->explicacion, $registro->accion_recomendada, $bandera->nombre] as $datoGuardado) {
-            $this->assertStringNotContainsString('482913', $datoGuardado);
-            $this->assertStringNotContainsString('7123', $datoGuardado);
+            $this->assertStringNotContainsString('000000', $datoGuardado);
+            $this->assertStringNotContainsString('0000 0000', $datoGuardado);
             $this->assertStringContainsString('[dato oculto]', $datoGuardado);
         }
     }

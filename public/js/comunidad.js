@@ -6,6 +6,7 @@
     const opcionesComunes = {
         responsive: true,
         maintainAspectRatio: false,
+        animation: false,
         plugins: {
             legend: { position: 'bottom', labels: { padding: 18, usePointStyle: true } },
         },
@@ -56,7 +57,7 @@
             ...opcionesComunes,
             scales: {
                 y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Cantidad' } },
-                x: { title: { display: true, text: 'Fecha' } },
+                x: { type: 'category', title: { display: true, text: 'Fecha' } },
             },
         },
     });

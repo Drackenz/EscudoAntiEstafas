@@ -139,9 +139,9 @@ html.modo-facil .boton, html.modo-facil .boton-secundario, html.modo-facil .boto
 
 @media (max-width: 720px) {
     .barra-interior, .contenedor { width: min(100% - 28px, 1120px); }
-    .barra-interior { min-height: 72px; }
-    .marca { font-size: .94rem; }
-    .navegacion { justify-content: flex-end; gap: 10px; }
+    .barra-interior { min-height: 72px; align-items: flex-start; flex-direction: column; padding: 14px 0; gap: 12px; }
+    .marca { font-size: .94rem; white-space: nowrap; }
+    .navegacion { width: 100%; justify-content: flex-start; gap: 10px; }
     .enlace-juego { font-size: .85rem; }
     .boton-modo { min-height: 48px; padding: 10px 12px; font-size: .88rem; }
     .contenedor { padding-top: 34px; }
